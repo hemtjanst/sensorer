@@ -53,10 +53,10 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 
 		c.Lock()
 		defer c.Unlock()
-		if sensor, ok := c.Sensors[topic]; ok {
+		if sensor, ok := c.Sensors[ms.Topic()]; ok {
 			sensor.Data = v
 		} else {
-			c.Sensors[topic] = &SensorData{
+			c.Sensors[ms.Topic()] = &SensorData{
 				Type:  feature,
 				Topic: topic,
 				Data:  v,
@@ -68,12 +68,17 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 		case "currenttemperature":
 			metrics.Gauge["temperature"].WithLabelValues(topic).Set(v)
 			// Attempt to calculate realtive humidity
-			t := strings.Split(topic, "/")
+			t := strings.Split(ms.Topic(), "/")
 			i := Position("temperature", t)
 			if i == -1 {
 				return
 			}
 			t[i] = "humidity"
+			i = Position("currentTemperature", t)
+			if i == -1 {
+				return
+			}
+			t[i] = "currentRelativeHumidity"
 			nt := strings.Join(t[:], "/")
 			if sensor, ok := c.Sensors[nt]; ok {
 				metrics.Gauge["humiture"].WithLabelValues(strings.Replace(topic, "/temperature", "", 1)).Set(
@@ -82,12 +87,17 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 		case "currentrelativehumidity":
 			metrics.Gauge["humidity"].WithLabelValues(topic).Set(v)
 			// Attempt to calculate realtive humidity
-			t := strings.Split(topic, "/")
+			t := strings.Split(ms.Topic(), "/")
 			i := Position("humidity", t)
 			if i == -1 {
 				return
 			}
 			t[i] = "temperature"
+			i = Position("currentRelativeHumidity", t)
+			if i == -1 {
+				return
+			}
+			t[i] = "currentTemperature"
 			nt := strings.Join(t[:], "/")
 			if sensor, ok := c.Sensors[nt]; ok {
 				metrics.Gauge["humiture"].WithLabelValues(strings.Replace(topic, "/humidity", "", 1)).Set(
