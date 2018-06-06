@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
@@ -52,10 +53,10 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 
 		c.Lock()
 		defer c.Unlock()
-		if sensor, ok := c.Sensors[ms.Topic()]; ok {
+		if sensor, ok := c.Sensors[topic]; ok {
 			sensor.Data = v
 		} else {
-			c.Sensors[ms.Topic()] = &SensorData{
+			c.Sensors[topic] = &SensorData{
 				Type:  feature,
 				Topic: topic,
 				Data:  v,
@@ -66,8 +67,32 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 		switch strings.ToLower(feature) {
 		case "currenttemperature":
 			metrics.Gauge["temperature"].WithLabelValues(topic).Set(v)
+			// Attempt to calculate realtive humidity
+			t := strings.Split(topic, "/")
+			i := Position("temperature", t)
+			if i == -1 {
+				return
+			}
+			t[i] = "humidity"
+			nt := strings.Join(t[:], "/")
+			if sensor, ok := c.Sensors[nt]; ok {
+				metrics.Gauge["humiture"].WithLabelValues(strings.Replace(topic, "/temperature", "", 1)).Set(
+					Humiture(v, sensor.Data))
+			}
 		case "currentrelativehumidity":
 			metrics.Gauge["humidity"].WithLabelValues(topic).Set(v)
+			// Attempt to calculate realtive humidity
+			t := strings.Split(topic, "/")
+			i := Position("humidity", t)
+			if i == -1 {
+				return
+			}
+			t[i] = "temperature"
+			nt := strings.Join(t[:], "/")
+			if sensor, ok := c.Sensors[nt]; ok {
+				metrics.Gauge["humiture"].WithLabelValues(strings.Replace(topic, "/humidity", "", 1)).Set(
+					Humiture(sensor.Data, v))
+			}
 		case "contactsensorstate":
 			metrics.Gauge["contact"].WithLabelValues(topic).Set(v)
 		case "currentpower":
@@ -180,6 +205,16 @@ func NewMetrics() *Metrics {
 			"source",
 		},
 	)
+	humiture := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "sensor",
+			Name:      "humiture_celsius",
+			Help:      "Heat Index ('feels like temperature') in degrees Celsius",
+		},
+		[]string{
+			"source",
+		},
+	)
 	humidity := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "sensor",
@@ -226,6 +261,7 @@ func NewMetrics() *Metrics {
 	)
 
 	prometheus.MustRegister(temperature)
+	prometheus.MustRegister(humiture)
 	prometheus.MustRegister(humidity)
 	prometheus.MustRegister(contact)
 	prometheus.MustRegister(powerUsage)
@@ -234,6 +270,7 @@ func NewMetrics() *Metrics {
 	return &Metrics{
 		Gauge: map[string]*prometheus.GaugeVec{
 			"temperature": temperature,
+			"humiture":    humiture,
 			"humidity":    humidity,
 			"contact":     contact,
 			"power":       powerUsage,
@@ -242,4 +279,40 @@ func NewMetrics() *Metrics {
 			"power": powerTotal,
 		},
 	}
+}
+
+// Humiture returns the Heat Index in degrees Celsius.
+// This is also known as the "feels like" temperatue,
+// "felt air temperature" or "apparent temperature".
+// https://en.wikipedia.org/wiki/Heat_index
+func Humiture(temp, relativeHumidity float64) float64 {
+	c1 := -8.784695
+	c2 := 1.61139411
+	c3 := 2.33854900
+	c4 := -0.14611605
+	c5 := -0.01230809
+	c6 := -0.01642482
+	c7 := 0.00221173
+	c8 := 0.00072546
+	c9 := -0.00000358
+
+	return (c1 + (c2 * temp) +
+		(c3 * relativeHumidity) +
+		(c4 * temp * relativeHumidity) +
+		(c5 * math.Pow(temp, 2)) +
+		(c6 * math.Pow(relativeHumidity, 2)) +
+		(c7 * math.Pow(temp, 2) * relativeHumidity) +
+		(c8 * temp * math.Pow(relativeHumidity, 2)) +
+		(c9 * math.Pow(temp, 2) * math.Pow(relativeHumidity, 2)))
+}
+
+// Position returns the position of a string in a slice, or
+// -1 if it is not found
+func Position(what string, in []string) int {
+	for p, v := range in {
+		if v == what {
+			return p
+		}
+	}
+	return -1
 }
