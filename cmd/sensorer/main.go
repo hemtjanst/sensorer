@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -12,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/hemtjanst/hemtjanst/device"
 	"github.com/hemtjanst/hemtjanst/messaging"
@@ -42,11 +40,13 @@ type Metrics struct {
 }
 
 // Register a new Sensor
-func (c *Container) Register(topic, feature string, value *device.Feature, metrics *Metrics) {
+func (c *Container) Register(topic, feature string, value *device.Feature, metrics *Metrics, debug *bool) {
 	value.OnUpdate(func(ms messaging.Message) {
 		v, err := strconv.ParseFloat(string(ms.Payload()), 64)
 		if err != nil {
-			log.Printf("Received data does not appear to be a float: %s %v", string(ms.Payload()), err)
+			if *debug {
+				log.Printf("Received data does not appear to be a float: %s %v", string(ms.Payload()), err)
+			}
 			return
 		}
 
@@ -75,8 +75,9 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 		case "energyused":
 			metrics.Counter["power"].WithLabelValues(topic).Set(v)
 		}
-
-		log.Printf("Updated %s on %s to %f", feature, topic, v)
+		if *debug {
+			log.Printf("Updated %s on %s to %f", feature, topic, v)
+		}
 	})
 }
 
@@ -88,6 +89,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "\n")
 	}
 	addr := flag.String("metrics.address", "localhost:9123", "Address to expose metrics on")
+	debug := flag.Bool("debug", false, "Turn on debugging, generates more logs")
 	flag.Parse()
 
 	quit := make(chan os.Signal)
@@ -116,26 +118,34 @@ func main() {
 
 	messenger.Subscribe("announce/#", 1, func(m messaging.Message) {
 		t := m.Topic()[9:]
-		log.Printf("Received announcement for: %s", t)
+		if *debug {
+			log.Printf("Received announcement for: %s", t)
+		}
 		md.RLock()
 		if _, ok := devices[t]; !ok {
 			md.RUnlock()
 			d := device.NewDevice(t, messenger)
 			err := d.UnmarshalJSON(m.Payload())
 			if err != nil {
-				log.Printf("Could not decode device: %s, %v", t, err)
+				if *debug {
+					log.Printf("Could not decode device: %s, %v", t, err)
+				}
 				return
 			}
 
 			for name, value := range d.Features {
 				switch strings.ToLower(name) {
 				case "currenttemperature", "currentrelativehumidity", "currentpower", "energyused", "contactsensorstate":
-					log.Printf("Found feature %s on device %s", name, t)
+					if *debug {
+						log.Printf("Found feature %s on device %s", name, t)
+					}
 					md.Lock()
 					devices[t] = d
-					log.Printf("Added device %s", t)
+					if *debug {
+						log.Printf("Added device %s", t)
+					}
 					md.Unlock()
-					sensors.Register(t, name, value, metrics)
+					sensors.Register(t, name, value, metrics, debug)
 				}
 			}
 		} else {
@@ -153,15 +163,9 @@ func main() {
 
 	sig := <-quit
 	log.Printf("Received signal: %s, proceeding to shutdown", sig)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	h.Shutdown(ctx)
-	log.Print("Shut down HTTP server")
-
 	conn.Disconnect(250)
 	log.Print("Disconnected from broker. Bye!")
 	os.Exit(0)
-
 }
 
 // NewMetrics creates all the Prometheus metrics we want to track
