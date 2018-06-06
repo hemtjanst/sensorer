@@ -173,8 +173,8 @@ func NewMetrics() *Metrics {
 	temperature := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "sensor",
-			Name:      "temperature_celcius",
-			Help:      "Temperature in degrees Celcius",
+			Name:      "temperature_celsius",
+			Help:      "Temperature in degrees Celsius",
 		},
 		[]string{
 			"source",
