@@ -13,6 +13,7 @@ import (
 	"sync"
 	"syscall"
 
+	mq "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hemtjanst/hemtjanst/device"
 	"github.com/hemtjanst/hemtjanst/messaging"
 	"github.com/hemtjanst/hemtjanst/messaging/flagmqtt"
@@ -40,12 +41,65 @@ type Metrics struct {
 	Counter map[string]*prometheus.CounterVec
 }
 
+type handler struct {
+	sync.RWMutex
+	devices   map[string]*device.Device
+	debug     bool
+	metrics   *Metrics
+	sensors   *Container
+	messenger messaging.PublishSubscriber
+}
+
+func (h *handler) onConnect(conn mq.Client) {
+	log.Print("Connected to MQTT broker")
+	h.devices = map[string]*device.Device{}
+	if h.messenger == nil {
+		h.messenger = messaging.NewMQTTMessenger(conn)
+	}
+	h.messenger.Subscribe("announce/#", 1, func(m messaging.Message) {
+		t := m.Topic()[9:]
+		if h.debug {
+			log.Printf("Received announcement for: %s", t)
+		}
+		h.RLock()
+		if _, ok := h.devices[t]; !ok {
+			h.RUnlock()
+			d := device.NewDevice(t, h.messenger)
+			err := d.UnmarshalJSON(m.Payload())
+			if err != nil {
+				if h.debug {
+					log.Printf("Could not decode device: %s, %v", t, err)
+				}
+				return
+			}
+
+			for name, value := range d.Features {
+				switch strings.ToLower(name) {
+				case "currenttemperature", "currentrelativehumidity", "currentpower", "energyused", "contactsensorstate":
+					if h.debug {
+						log.Printf("Found feature %s on device %s", name, t)
+					}
+					h.Lock()
+					h.devices[t] = d
+					if h.debug {
+						log.Printf("Added device %s", t)
+					}
+					h.Unlock()
+					h.sensors.Register(t, name, value, h.metrics, h.debug)
+				}
+			}
+		} else {
+			h.RUnlock()
+		}
+	})
+}
+
 // Register a new Sensor
-func (c *Container) Register(topic, feature string, value *device.Feature, metrics *Metrics, debug *bool) {
+func (c *Container) Register(topic, feature string, value *device.Feature, metrics *Metrics, debug bool) {
 	value.OnUpdate(func(ms messaging.Message) {
 		v, err := strconv.ParseFloat(string(ms.Payload()), 64)
 		if err != nil {
-			if *debug {
+			if debug {
 				log.Printf("Received data does not appear to be a float: %s %v", string(ms.Payload()), err)
 			}
 			return
@@ -110,7 +164,7 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 		case "energyused":
 			metrics.Counter["power"].WithLabelValues(topic).Set(v)
 		}
-		if *debug {
+		if debug {
 			log.Printf("Updated %s on %s to %f", feature, topic, v)
 		}
 	})
@@ -130,68 +184,35 @@ func main() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
+	devices := map[string]*device.Device{}
 	sensors := &Container{Sensors: map[string]*SensorData{}}
+	metrics := NewMetrics()
+	h := &handler{
+		devices: devices,
+		sensors: sensors,
+		metrics: metrics,
+		debug:   *debug,
+	}
 
 	id := flagmqtt.NewUniqueIdentifier()
 	conn, err := flagmqtt.NewPersistentMqtt(flagmqtt.ClientConfig{
-		ClientID:    id,
-		WillTopic:   "leave",
-		WillPayload: id,
+		ClientID:         id,
+		WillTopic:        "leave",
+		WillPayload:      id,
+		OnConnectHandler: h.onConnect,
 	})
 	if err != nil {
 		log.Fatal("Could not configure the MQTT client: ", err)
 	}
-	messenger := messaging.NewMQTTMessenger(conn)
 
 	if token := conn.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatal("Failed to establish connection with broker: ", token.Error())
 	}
 
-	devices := map[string]*device.Device{}
-	md := sync.RWMutex{}
-	metrics := NewMetrics()
-
-	messenger.Subscribe("announce/#", 1, func(m messaging.Message) {
-		t := m.Topic()[9:]
-		if *debug {
-			log.Printf("Received announcement for: %s", t)
-		}
-		md.RLock()
-		if _, ok := devices[t]; !ok {
-			md.RUnlock()
-			d := device.NewDevice(t, messenger)
-			err := d.UnmarshalJSON(m.Payload())
-			if err != nil {
-				if *debug {
-					log.Printf("Could not decode device: %s, %v", t, err)
-				}
-				return
-			}
-
-			for name, value := range d.Features {
-				switch strings.ToLower(name) {
-				case "currenttemperature", "currentrelativehumidity", "currentpower", "energyused", "contactsensorstate":
-					if *debug {
-						log.Printf("Found feature %s on device %s", name, t)
-					}
-					md.Lock()
-					devices[t] = d
-					if *debug {
-						log.Printf("Added device %s", t)
-					}
-					md.Unlock()
-					sensors.Register(t, name, value, metrics, debug)
-				}
-			}
-		} else {
-			md.RUnlock()
-		}
-	})
-
-	h := http.Server{Addr: *addr, Handler: promhttp.Handler()}
+	ht := http.Server{Addr: *addr, Handler: promhttp.Handler()}
 
 	go func() {
-		if err := h.ListenAndServe(); err != nil {
+		if err := ht.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
 	}()
