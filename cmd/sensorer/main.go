@@ -306,14 +306,18 @@ func Humiture(temp, relativeHumidity float64) float64 {
 	c8 := 0.00072546
 	c9 := -0.00000358
 
-	return (c1 + (c2 * temp) +
-		(c3 * relativeHumidity) +
-		(c4 * temp * relativeHumidity) +
-		(c5 * math.Pow(temp, 2)) +
-		(c6 * math.Pow(relativeHumidity, 2)) +
-		(c7 * math.Pow(temp, 2) * relativeHumidity) +
-		(c8 * temp * math.Pow(relativeHumidity, 2)) +
-		(c9 * math.Pow(temp, 2) * math.Pow(relativeHumidity, 2)))
+	if temp >= 26.0 {
+		return (c1 + (c2 * temp) +
+			(c3 * relativeHumidity) +
+			(c4 * temp * relativeHumidity) +
+			(c5 * math.Pow(temp, 2)) +
+			(c6 * math.Pow(relativeHumidity, 2)) +
+			(c7 * math.Pow(temp, 2) * relativeHumidity) +
+			(c8 * temp * math.Pow(relativeHumidity, 2)) +
+			(c9 * math.Pow(temp, 2) * math.Pow(relativeHumidity, 2)))
+	} else {
+		return 0.5 * (temp + 16.1 + ((temp - 21) * 1.2) + (relativeHumidity * 0.094))
+	}
 }
 
 // Position returns the position of a string in a slice, or
