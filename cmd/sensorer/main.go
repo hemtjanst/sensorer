@@ -75,7 +75,9 @@ func (h *handler) onConnect(conn mq.Client) {
 
 			for name, value := range d.Features {
 				switch strings.ToLower(name) {
-				case "currenttemperature", "currentrelativehumidity", "currentpower", "energyused", "contactsensorstate":
+				case "currenttemperature", "currentrelativehumidity", "currentpower",
+					"energyused", "contactsensorstate", "batterylevel",
+					"statuslowbattery":
 					if h.debug {
 						log.Printf("Found feature %s on device %s", name, t)
 					}
@@ -163,6 +165,10 @@ func (c *Container) Register(topic, feature string, value *device.Feature, metri
 			metrics.Gauge["power"].WithLabelValues(topic).Set(v)
 		case "energyused":
 			metrics.Counter["power"].WithLabelValues(topic).Set(v)
+		case "batterylevel":
+			metrics.Gauge["battery"].WithLabelValues(topic).Set(v)
+		case "statuslowbattery":
+			metrics.Gauge["lowbattery"].WithLabelValues(topic).Set(v)
 		}
 		if debug {
 			log.Printf("Updated %s on %s to %f", feature, topic, v)
@@ -291,12 +297,35 @@ func NewMetrics() *Metrics {
 		},
 	)
 
+	batteryLevel := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "battery",
+			Name:      "level_percent",
+			Help:      "Battery level percentage",
+		},
+		[]string{
+			"source",
+		},
+	)
+	lowBattery := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "battery",
+			Name:      "state_low",
+			Help:      "Low battery state",
+		},
+		[]string{
+			"source",
+		},
+	)
+
 	prometheus.MustRegister(temperature)
 	prometheus.MustRegister(humiture)
 	prometheus.MustRegister(humidity)
 	prometheus.MustRegister(contact)
 	prometheus.MustRegister(powerUsage)
 	prometheus.MustRegister(powerTotal)
+	prometheus.MustRegister(batteryLevel)
+	prometheus.MustRegister(lowBattery)
 
 	return &Metrics{
 		Gauge: map[string]*prometheus.GaugeVec{
@@ -305,6 +334,8 @@ func NewMetrics() *Metrics {
 			"humidity":    humidity,
 			"contact":     contact,
 			"power":       powerUsage,
+			"battery":     batteryLevel,
+			"lowbattery":  lowBattery,
 		},
 		Counter: map[string]*prometheus.CounterVec{
 			"power": powerTotal,
