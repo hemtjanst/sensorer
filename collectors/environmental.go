@@ -5,6 +5,8 @@ import (
 	"log"
 	"math"
 
+	"github.com/hemtjanst/bibliotek/feature"
+
 	"github.com/hemtjanst/bibliotek/server"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -50,16 +52,13 @@ func (c *EnvironmentalCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends metric updates into the channel
 func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
-	sensors := []server.Device{}
-	sensors = append(sensors, c.m.DeviceByType("humiditySensor")...)
-	sensors = append(sensors, c.m.DeviceByType("temperatureSensor")...)
-
+	devices := c.m.Devices()
 	humidity := map[string]float64{}
 	temperature := map[string]float64{}
 
-	for _, s := range sensors {
-		if s.Feature("currentRelativeHumidity").Exists() {
-			v, err := toFloat(s.Feature("currentRelativeHumidity").Value())
+	for _, s := range devices {
+		if s.Feature(feature.CurrentRelativeHumidity.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.CurrentRelativeHumidity.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue
@@ -68,8 +67,8 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.relativeHumidity,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
-		if s.Feature("currentTemperature").Exists() {
-			v, err := toFloat(s.Feature("currentTemperature").Value())
+		if s.Feature(feature.CurrentTemperature.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.CurrentTemperature.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue
