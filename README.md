@@ -25,6 +25,8 @@ MQTT topic.
 * `contactSensorState`: gauge `sensor_contact_state`
 * `currentPower`: gauge `sensor_power_current_watts`
 * `energyUsed`: counter `sensor_power_total_kwh`
+* `currentVoltage`: gauge `sensor_power_current_voltage`
+* `currentAmpere`: gauge `sensor_power_current_ampere`
 * `batteryLevel`: gauge `sensor_battery_level_percent`
 
 Additionally a time series is exposed for humiture, also known as
