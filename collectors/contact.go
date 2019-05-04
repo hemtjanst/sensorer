@@ -3,6 +3,8 @@ package collectors
 import (
 	"log"
 
+	"github.com/hemtjanst/bibliotek/feature"
+
 	"github.com/hemtjanst/bibliotek/server"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -32,10 +34,10 @@ func (c *ContactCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends metric updates into the channel
 func (c *ContactCollector) Collect(ch chan<- prometheus.Metric) {
-	sensors := c.m.DeviceByType("contactSensor")
-	for _, s := range sensors {
-		if s.Feature("contactSensorState").Exists() {
-			v, err := toFloat(s.Feature("contactSensorState").Value())
+	devices := c.m.Devices()
+	for _, s := range devices {
+		if s.Feature(feature.ContactSensorState.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.ContactSensorState.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue

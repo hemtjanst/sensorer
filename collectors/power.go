@@ -3,6 +3,8 @@ package collectors
 import (
 	"log"
 
+	"github.com/hemtjanst/bibliotek/feature"
+
 	"github.com/hemtjanst/bibliotek/server"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -53,10 +55,10 @@ func (c *PowerCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends metric updates into the channel
 func (c *PowerCollector) Collect(ch chan<- prometheus.Metric) {
-	sensors := c.m.DeviceByType("outlet")
-	for _, s := range sensors {
-		if s.Feature("currentPower").Exists() {
-			v, err := toFloat(s.Feature("currentPower").Value())
+	devices := c.m.Devices()
+	for _, s := range devices {
+		if s.Feature(feature.CurrentPower.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.CurrentPower.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue
@@ -64,8 +66,8 @@ func (c *PowerCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.powerCurrent,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
-		if s.Feature("energyUsed").Exists() {
-			v, err := toFloat(s.Feature("energyUsed").Value())
+		if s.Feature(feature.EnergyUsed.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.EnergyUsed.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue
@@ -73,8 +75,8 @@ func (c *PowerCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.powerTotal,
 				prometheus.CounterValue, v, s.Info().Topic)
 		}
-		if s.Feature("currentVoltage").Exists() {
-			v, err := toFloat(s.Feature("currentVoltage").Value())
+		if s.Feature(feature.CurrentVoltage.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.CurrentVoltage.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue
@@ -82,8 +84,8 @@ func (c *PowerCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.voltageCurrent,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
-		if s.Feature("currentAmpere").Exists() {
-			v, err := toFloat(s.Feature("currentAmpere").Value())
+		if s.Feature(feature.CurrentAmpere.String()).Exists() {
+			v, err := toFloat(s.Feature(feature.CurrentAmpere.String()).Value())
 			if err != nil {
 				log.Print(err.Error())
 				continue
