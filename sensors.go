@@ -8,7 +8,7 @@ import (
 
 	"github.com/hemtjanst/sensorer/collectors"
 
-	"github.com/hemtjanst/bibliotek/server"
+	"lib.hemtjan.st/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/prometheus/client_golang/prometheus"

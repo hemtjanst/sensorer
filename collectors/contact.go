@@ -3,9 +3,9 @@ package collectors
 import (
 	"log"
 
-	"github.com/hemtjanst/bibliotek/feature"
+	"lib.hemtjan.st/feature"
 
-	"github.com/hemtjanst/bibliotek/server"
+	"lib.hemtjan.st/server"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

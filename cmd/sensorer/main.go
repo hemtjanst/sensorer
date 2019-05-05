@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hemtjanst/bibliotek/server"
-	"github.com/hemtjanst/bibliotek/transport/mqtt"
+	"lib.hemtjan.st/server"
+	"lib.hemtjan.st/transport/mqtt"
 	"github.com/hemtjanst/sensorer"
 )
 
