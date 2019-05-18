@@ -20,17 +20,17 @@ Which metrics are exported depends on the features the device announces.
 Every exported metric has a label named `source` which holds the device's
 MQTT topic.
 
-* `currentTemperature`: gauge `sensor_temperature_celsius`
-* `currentRelativeHumidity`: gauge `sensor_humidity_relative_percent`
-* `contactSensorState`: gauge `sensor_contact_state`
-* `currentPower`: gauge `sensor_power_current_watts`
-* `energyUsed`: counter `sensor_power_total_kwh`
-* `currentVoltage`: gauge `sensor_power_current_voltage`
-* `currentAmpere`: gauge `sensor_power_current_ampere`
-* `batteryLevel`: gauge `sensor_battery_level_percent`
+* `currentTemperature`: gauge `sensors_temperature_celsius`
+* `currentRelativeHumidity`: gauge `sensors_humidity_relative_percent`
+* `contactSensorState`: gauge `sensors_contact_state`
+* `currentPower`: gauge `sensors_power_current_watts`
+* `energyUsed`: counter `sensors_power_total_kwh`
+* `currentVoltage`: gauge `sensors_power_current_voltage`
+* `currentAmpere`: gauge `sensors_power_current_ampere`
+* `batteryLevel`: gauge `sensors_battery_level_percent`
 
 Additionally a time series is exposed for humiture, also known as
-the "feels like" temperature: `sensor_humiture_celsius`.
+the "feels like" temperature: `sensors_humiture_celsius`.
 
 There are two endpoints:
 
