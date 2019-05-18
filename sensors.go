@@ -8,8 +8,8 @@ import (
 
 	"github.com/hemtjanst/sensorer/collectors"
 
-	"lib.hemtjan.st/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"lib.hemtjan.st/server"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -67,8 +67,8 @@ func NewServer(addr string, mg *server.Manager) (func(context.Context), error) {
 	go mg.Start(ctx)
 
 	mux := http.NewServeMux()
-	mux.Handle("/collector/metrics", promhttp.HandlerFor(NewPrometheusMetrics(), promhttp.HandlerOpts{}))
-	mux.Handle("/metrics", promhttp.HandlerFor(sensors, promhttp.HandlerOpts{}))
+	mux.Handle("/metrics", promhttp.HandlerFor(NewPrometheusMetrics(), promhttp.HandlerOpts{}))
+	mux.Handle("/sensors", promhttp.HandlerFor(sensors, promhttp.HandlerOpts{}))
 	h := &http.Server{
 		Handler: mux,
 	}

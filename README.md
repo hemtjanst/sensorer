@@ -32,6 +32,12 @@ MQTT topic.
 Additionally a time series is exposed for humiture, also known as
 the "feels like" temperature: `sensor_humiture_celsius`.
 
+There are two endpoints:
+
+* `/metrics` which contains metrics internal to Sensorer, like HTTP
+  request statistics, memory utilisation etc
+* `/sensors` with the sensor metrics
+
 ## Options
 
 A number of options can be passed at startup in order to configure the
