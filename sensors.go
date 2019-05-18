@@ -63,12 +63,13 @@ func NewServer(addr string, mg *server.Manager) (func(context.Context), error) {
 	if err != nil {
 		return nil, err
 	}
+	promMetrics := NewPrometheusMetrics()
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	go mg.Start(ctx)
 
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(NewPrometheusMetrics(), promhttp.HandlerOpts{}))
-	mux.Handle("/sensors", promhttp.HandlerFor(sensors, promhttp.HandlerOpts{}))
+	mux.Handle("/metrics", promhttp.HandlerFor(promMetrics, promhttp.HandlerOpts{}))
+	mux.Handle("/sensors", promhttp.InstrumentMetricHandler(promMetrics, promhttp.HandlerFor(sensors, promhttp.HandlerOpts{})))
 	h := &http.Server{
 		Handler: mux,
 	}
