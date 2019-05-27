@@ -1,4 +1,4 @@
-module github.com/hemtjanst/sensorer
+module hemtjan.st/sensorer
 
 go 1.12
 

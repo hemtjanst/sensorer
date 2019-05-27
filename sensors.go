@@ -1,4 +1,4 @@
-package sensorer
+package sensorer // import "hemtjan.st/sensorer"
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/hemtjanst/sensorer/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"lib.hemtjan.st/server"
-
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"hemtjan.st/sensorer/collectors"
+	"lib.hemtjan.st/server"
 )
 
 var (

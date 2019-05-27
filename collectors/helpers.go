@@ -1,4 +1,4 @@
-package collectors
+package collectors // import "hemtjan.st/sensorer/collectors"
 
 import (
 	"strconv"

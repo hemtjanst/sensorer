@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"hemtjan.st/sensorer"
 	"lib.hemtjan.st/server"
 	"lib.hemtjan.st/transport/mqtt"
-	"github.com/hemtjanst/sensorer"
 )
 
 func main() {
