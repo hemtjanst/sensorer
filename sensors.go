@@ -7,11 +7,15 @@ import (
 	"net/http"
 
 	"github.com/hemtjanst/sensorer/collectors"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"lib.hemtjan.st/server"
 
 	"github.com/prometheus/client_golang/prometheus"
+)
+
+var (
+	latitude  float64
+	longitude float64
 )
 
 // NewPrometheusMetrics returns a Prometheus registry with metrics that
@@ -45,7 +49,7 @@ func NewSensorMetrics(mg *server.Manager) (*prometheus.Registry, error) {
 	}
 	p.MustRegister(c)
 
-	c, err = collectors.NewEnvironmentalCollector(mg)
+	c, err = collectors.NewEnvironmentalCollector(mg, latitude, longitude)
 	if err != nil {
 		return nil, err
 	}
@@ -54,11 +58,13 @@ func NewSensorMetrics(mg *server.Manager) (*prometheus.Registry, error) {
 }
 
 // NewServer starts an HTTP server exposing Prometheus metrics
-func NewServer(addr string, mg *server.Manager) (func(context.Context), error) {
+func NewServer(addr string, lat, long float64, mg *server.Manager) (func(context.Context), error) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
+	latitude = lat
+	longitude = long
 	sensors, err := NewSensorMetrics(mg)
 	if err != nil {
 		return nil, err

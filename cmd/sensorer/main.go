@@ -17,6 +17,8 @@ import (
 func main() {
 	mqttCfg := mqtt.MustFlags(flag.String, flag.Bool)
 	flgAddress := flag.String("exporter.listen-address", "0.0.0.0:0", "address:port the exporter will listen on")
+	flgLatitude := flag.Float64("location.lat", 0.0, "latitude of location for sunrise/sunset")
+	flgLongitude := flag.Float64("location.long", 0.0, "longitude of location for sunrise/sunset")
 	flag.Parse()
 
 	m, err := mqtt.New(context.Background(), mqttCfg())
@@ -30,7 +32,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	log.Print("starting exporter")
-	shutdown, err := sensorer.NewServer(*flgAddress, mg)
+	shutdown, err := sensorer.NewServer(*flgAddress, *flgLatitude, *flgLongitude, mg)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

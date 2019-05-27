@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"time"
+
+	"github.com/kelvins/sunrisesunset"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"lib.hemtjan.st/feature"
-
 	"lib.hemtjan.st/server"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // EnvironmentalCollector collects sensor data from environmental sensors
@@ -16,15 +18,22 @@ type EnvironmentalCollector struct {
 	humiture         *prometheus.Desc
 	relativeHumidity *prometheus.Desc
 	temperature      *prometheus.Desc
+	daylight         *prometheus.Desc
+	sunrise          *prometheus.Desc
+	sunset           *prometheus.Desc
 
-	m *server.Manager
+	m    *server.Manager
+	lat  float64
+	long float64
 }
 
 // NewEnvironmentalCollector returns a new collector for gather sensor
 // metrics from environmental sensors
-func NewEnvironmentalCollector(m *server.Manager) (prometheus.Collector, error) {
+func NewEnvironmentalCollector(m *server.Manager, lat, long float64) (prometheus.Collector, error) {
 	return &EnvironmentalCollector{
-		m: m,
+		m:    m,
+		lat:  lat,
+		long: long,
 		humiture: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "humiture_celsius"),
 			"Heat Index ('feels like temperature') in degrees Celsius",
@@ -40,6 +49,21 @@ func NewEnvironmentalCollector(m *server.Manager) (prometheus.Collector, error) 
 			"Temperature in degrees Celsius",
 			[]string{"source"}, nil,
 		),
+		daylight: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "daylight"),
+			"Between sunrise and sunset",
+			[]string{"source"}, nil,
+		),
+		sunrise: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "sunrise_time_seconds"),
+			"Time the sun will rise today (UTC)",
+			[]string{"source"}, nil,
+		),
+		sunset: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "sunset_time_seconds"),
+			"Time the sun will set today (UTC)",
+			[]string{"source"}, nil,
+		),
 	}, nil
 }
 
@@ -48,6 +72,9 @@ func (c *EnvironmentalCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.humiture
 	ch <- c.relativeHumidity
 	ch <- c.temperature
+	ch <- c.daylight
+	ch <- c.sunrise
+	ch <- c.sunset
 }
 
 // Collect sends metric updates into the channel
@@ -84,6 +111,39 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.humiture,
 				prometheus.GaugeValue, humiture(temp, hum), fmt.Sprintf("sensor/humiture/%s", dev))
 		}
+	}
+
+	t := time.Now().UTC()
+	year, month, day := t.Date()
+	p := sunrisesunset.Parameters{
+		Latitude:  c.lat,
+		Longitude: c.long,
+		UtcOffset: 0.0,
+		Date:      time.Date(year, month, day, 0, 0, 0, 0, time.UTC),
+	}
+	sunrise, sunset, err := p.GetSunriseSunset()
+	if err != nil {
+		return
+	}
+
+	sunriseT := time.Date(year, month, day, sunrise.Hour(), sunrise.Minute(), 0, 0, time.UTC)
+	sunsetT := time.Date(year, month, day, sunset.Hour(), sunset.Minute(), 0, 0, time.UTC)
+	ch <- prometheus.MustNewConstMetric(c.sunrise,
+		prometheus.GaugeValue, float64(
+			sunriseT.Unix(),
+		), "sensor/astrotime")
+
+	ch <- prometheus.MustNewConstMetric(c.sunset,
+		prometheus.GaugeValue, float64(
+			sunsetT.Unix(),
+		), "sensor/astrotime")
+
+	if t.After(sunriseT) && t.Before(sunsetT) {
+		ch <- prometheus.MustNewConstMetric(c.daylight,
+			prometheus.GaugeValue, 1.0, "sensor/astrotime")
+	} else {
+		ch <- prometheus.MustNewConstMetric(c.daylight,
+			prometheus.GaugeValue, 0.0, "sensor/astrotime")
 	}
 }
 

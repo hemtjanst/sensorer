@@ -16,6 +16,12 @@ This package was written with Go 1.10 but should work with Go 1.8 onwards.
 
 ## Exported metrics
 
+There are two endpoints:
+
+* `/metrics` which contains metrics internal to Sensorer, like HTTP
+  request statistics, memory utilisation etc
+* `/sensors` with the sensor metrics
+
 Which metrics are exported depends on the features the device announces.
 Every exported metric has a label named `source` which holds the device's
 MQTT topic.
@@ -29,14 +35,15 @@ MQTT topic.
 * `currentAmpere`: gauge `sensors_power_current_ampere`
 * `batteryLevel`: gauge `sensors_battery_level_percent`
 
-Additionally a time series is exposed for humiture, also known as
+### Built-in sensors
+
+A time series is computed for humiture, also known as
 the "feels like" temperature: `sensors_humiture_celsius`.
 
-There are two endpoints:
-
-* `/metrics` which contains metrics internal to Sensorer, like HTTP
-  request statistics, memory utilisation etc
-* `/sensors` with the sensor metrics
+Two time series are computed based on `location.lat` and `location.long`,
+respectively `sensors_sunrise_time_seconds` and `sensors_sunset_time_seconds`.
+A third time series, `sensors_daylight` returns 1 if the current time
+is between sunrise and sunset, and 0 otherwise.
 
 ## Options
 
