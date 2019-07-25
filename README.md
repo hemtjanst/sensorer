@@ -34,6 +34,11 @@ MQTT topic.
 * `currentVoltage`: gauge `sensors_power_current_voltage`
 * `currentAmpere`: gauge `sensors_power_current_ampere`
 * `batteryLevel`: gauge `sensors_battery_level_percent`
+* `precipitation` gauge `sensors_precipitation_mm_per_hour`
+* `airPressure` gauge `sensors_air_pressure_hpa`
+* `windSpeed` gauge `sensors_wind_speed_meters_per_second`
+* `windDirection` gauge `sensors_wind_direction_degrees`
+* `globalRadiation` gauge `sensors_global_radiation_watts_per_square_meter`
 
 ### Built-in sensors
 

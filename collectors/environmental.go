@@ -21,6 +21,11 @@ type EnvironmentalCollector struct {
 	daylight         *prometheus.Desc
 	sunrise          *prometheus.Desc
 	sunset           *prometheus.Desc
+	precipitation    *prometheus.Desc
+	airPressure      *prometheus.Desc
+	windSpeed        *prometheus.Desc
+	windDirection    *prometheus.Desc
+	globalRadiation  *prometheus.Desc
 
 	m    *server.Manager
 	lat  float64
@@ -64,6 +69,31 @@ func NewEnvironmentalCollector(m *server.Manager, lat, long float64) (prometheus
 			"Time the sun will set today (UTC)",
 			[]string{"source"}, nil,
 		),
+		precipitation: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "precipitation_mm_per_hour"),
+			"Precipitation rate",
+			[]string{"source"}, nil,
+		),
+		airPressure: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "air_pressure_hpa"),
+			"Atmospheric pressure",
+			[]string{"source"}, nil,
+		),
+		windSpeed: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "wind_speed_meters_per_second"),
+			"Wind Speed",
+			[]string{"source"}, nil,
+		),
+		windDirection: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "wind_direction_degrees"),
+			"Wind Direction",
+			[]string{"source"}, nil,
+		),
+		globalRadiation: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "global_radiation_watts_per_square_meter"),
+			"Global Radiation",
+			[]string{"source"}, nil,
+		),
 	}, nil
 }
 
@@ -75,6 +105,11 @@ func (c *EnvironmentalCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.daylight
 	ch <- c.sunrise
 	ch <- c.sunset
+	ch <- c.precipitation
+	ch <- c.airPressure
+	ch <- c.windSpeed
+	ch <- c.windDirection
+	ch <- c.globalRadiation
 }
 
 // Collect sends metric updates into the channel
@@ -104,6 +139,52 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.temperature,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
+		if ft := s.Feature("precipitation"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.precipitation,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+		if ft := s.Feature("airPressure"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.airPressure,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+		if ft := s.Feature("windSpeed"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.windSpeed,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+		if ft := s.Feature("windDirection"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.windDirection,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+		if ft := s.Feature("globalRadiation"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.globalRadiation,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+
 	}
 
 	for dev, temp := range temperature {
