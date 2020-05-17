@@ -26,6 +26,9 @@ type EnvironmentalCollector struct {
 	windSpeed        *prometheus.Desc
 	windDirection    *prometheus.Desc
 	globalRadiation  *prometheus.Desc
+	pm25             *prometheus.Desc
+	airQuality       *prometheus.Desc
+	waterLevel       *prometheus.Desc
 
 	m    *server.Manager
 	lat  float64
@@ -94,6 +97,21 @@ func NewEnvironmentalCollector(m *server.Manager, lat, long float64) (prometheus
 			"Global Radiation",
 			[]string{"source"}, nil,
 		),
+		pm25: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "pm25_microgram_per_square_meter"),
+			"Particulate Matter (PM2.5)",
+			[]string{"source"}, nil,
+		),
+		airQuality: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "air_quality"),
+			"Air Quality Index",
+			[]string{"source"}, nil,
+		),
+		waterLevel: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "water_level_percent"),
+			"Water Level",
+			[]string{"source"}, nil,
+		),
 	}, nil
 }
 
@@ -110,6 +128,9 @@ func (c *EnvironmentalCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.windSpeed
 	ch <- c.windDirection
 	ch <- c.globalRadiation
+	ch <- c.pm25
+	ch <- c.airQuality
+	ch <- c.waterLevel
 }
 
 // Collect sends metric updates into the channel
@@ -184,7 +205,33 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.globalRadiation,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
-
+		if ft := s.Feature("pm2_5Density"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.pm25,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+		if ft := s.Feature("airQuality"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.airQuality,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
+		if ft := s.Feature("waterLevel"); ft.Exists() {
+			v, err := toFloat(ft.Value())
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.waterLevel,
+				prometheus.GaugeValue, v, s.Info().Topic)
+		}
 	}
 
 	for dev, temp := range temperature {
