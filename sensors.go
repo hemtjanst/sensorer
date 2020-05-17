@@ -54,6 +54,12 @@ func NewSensorMetrics(mg *server.Manager) (*prometheus.Registry, error) {
 		return nil, err
 	}
 	p.MustRegister(c)
+
+	c, err = collectors.NewFilterCollector(mg)
+	if err != nil {
+		return nil, err
+	}
+	p.MustRegister(c)
 	return p, nil
 }
 
