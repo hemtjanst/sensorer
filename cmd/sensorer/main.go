@@ -25,6 +25,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	go func() {
+		for {
+			ok, err := m.Start()
+			if !ok {
+				break
+			}
+			log.Printf("Error, retrying in 5 seconds: %v", err)
+			time.Sleep(5 * time.Second)
+		}
+		os.Exit(1)
+	}()
 
 	mg := server.New(m)
 
