@@ -3,7 +3,7 @@
 Sensorer, aka "sensors", reads sensor data from MQTT and makes it available
 for scraping to Prometheus. It's a Hemtjanst exporter.
 
-This package was written with Go 1.10 but should work with Go 1.8 onwards.
+This package was written with Go 1.14.
 
 ## Installation
 
