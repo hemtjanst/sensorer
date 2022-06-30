@@ -3,10 +3,10 @@ package collectors
 import (
 	"log"
 
-	"lib.hemtjan.st/feature"
-
-	"lib.hemtjan.st/server"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"lib.hemtjan.st/feature"
+	"lib.hemtjan.st/server"
 )
 
 // BatteryCollector gets battery status from sensors
@@ -36,14 +36,18 @@ func (c *BatteryCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *BatteryCollector) Collect(ch chan<- prometheus.Metric) {
 	devices := c.m.Devices()
 	for _, s := range devices {
-		if s.Feature(feature.BatteryLevel.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.BatteryLevel.String()).Value())
+		if ft := s.Feature(feature.BatteryLevel.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.batteryLevel,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 	}
 }

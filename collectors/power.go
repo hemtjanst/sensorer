@@ -3,10 +3,10 @@ package collectors
 import (
 	"log"
 
-	"lib.hemtjan.st/feature"
-
-	"lib.hemtjan.st/server"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"lib.hemtjan.st/feature"
+	"lib.hemtjan.st/server"
 )
 
 // PowerCollector gets power data from sensors
@@ -57,41 +57,57 @@ func (c *PowerCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *PowerCollector) Collect(ch chan<- prometheus.Metric) {
 	devices := c.m.Devices()
 	for _, s := range devices {
-		if s.Feature(feature.CurrentPower.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.CurrentPower.String()).Value())
+		if ft := s.Feature(feature.CurrentPower.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.powerCurrent,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
-		if s.Feature(feature.EnergyUsed.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.EnergyUsed.String()).Value())
+		if ft := s.Feature(feature.EnergyUsed.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.powerTotal,
-				prometheus.CounterValue, v, s.Info().Topic)
+				prometheus.CounterValue, vf, s.Info().Topic)
 		}
-		if s.Feature(feature.CurrentVoltage.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.CurrentVoltage.String()).Value())
+		if ft := s.Feature(feature.CurrentVoltage.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.voltageCurrent,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
-		if s.Feature(feature.CurrentAmpere.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.CurrentAmpere.String()).Value())
+		if ft := s.Feature(feature.CurrentAmpere.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.ampereCurrent,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 	}
 }

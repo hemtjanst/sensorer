@@ -3,10 +3,10 @@ package collectors
 import (
 	"log"
 
-	"lib.hemtjan.st/feature"
-
-	"lib.hemtjan.st/server"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"lib.hemtjan.st/feature"
+	"lib.hemtjan.st/server"
 )
 
 // ContactCollector gets contact state from sensors
@@ -36,14 +36,18 @@ func (c *ContactCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *ContactCollector) Collect(ch chan<- prometheus.Metric) {
 	devices := c.m.Devices()
 	for _, s := range devices {
-		if s.Feature(feature.ContactSensorState.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.ContactSensorState.String()).Value())
+		if ft := s.Feature(feature.ContactSensorState.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.contactState,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 	}
 }

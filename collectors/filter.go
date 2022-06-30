@@ -3,9 +3,9 @@ package collectors
 import (
 	"log"
 
-	"lib.hemtjan.st/feature"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	"lib.hemtjan.st/feature"
 	"lib.hemtjan.st/server"
 )
 
@@ -36,14 +36,18 @@ func (c *FilterCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *FilterCollector) Collect(ch chan<- prometheus.Metric) {
 	devices := c.m.Devices()
 	for _, s := range devices {
-		if s.Feature(feature.FilterChangeIndication.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.FilterChangeIndication.String()).Value())
+		if ft := s.Feature(feature.FilterChangeIndication.String()); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.filterReplacement,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 	}
 }
