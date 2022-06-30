@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -14,12 +15,28 @@ import (
 	"lib.hemtjan.st/transport/mqtt"
 )
 
+var (
+	version = "unknown"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
 func main() {
 	mqttCfg := mqtt.MustFlags(flag.String, flag.Bool)
 	flgAddress := flag.String("exporter.listen-address", "0.0.0.0:0", "address:port the exporter will listen on")
 	flgLatitude := flag.Float64("location.lat", 0.0, "latitude of location for sunrise/sunset")
 	flgLongitude := flag.Float64("location.long", 0.0, "longitude of location for sunrise/sunset")
+	flgVersion := flag.Bool("version", false, "print version info and exit")
 	flag.Parse()
+
+	if *flgVersion {
+		fmt.Fprintf(
+			os.Stdout,
+			`{"version": "%s", "commit": "%s", "date": "%s"}`,
+			version, commit, date,
+		)
+		os.Exit(0)
+	}
 
 	m, err := mqtt.New(context.Background(), mqttCfg())
 	if err != nil {
