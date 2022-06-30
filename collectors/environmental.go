@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/kelvins/sunrisesunset"
@@ -277,7 +278,7 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 	for dev, temp := range temperature {
 		if hum, ok := humidity[dev]; ok {
 			ch <- prometheus.MustNewConstMetric(c.humiture,
-				prometheus.GaugeValue, humiture(temp, hum), fmt.Sprintf("sensor/humiture/%s", dev))
+				prometheus.GaugeValue, humiture(temp, hum), fmt.Sprintf("sensor/humiture/%s", strings.TrimPrefix(dev, "sensor/")))
 		}
 	}
 
