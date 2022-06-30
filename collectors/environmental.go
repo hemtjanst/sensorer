@@ -140,8 +140,8 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 	temperature := map[string]float64{}
 
 	for _, s := range devices {
-		if s.Feature(feature.CurrentRelativeHumidity.String()).Exists() {
-			v := s.Feature(feature.CurrentRelativeHumidity.String()).Value()
+		if ft := s.Feature(feature.CurrentRelativeHumidity.String()); ft.Exists() {
+			v := ft.Value()
 			if v == "" {
 				continue
 			}
@@ -154,8 +154,8 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.relativeHumidity,
 				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
-		if s.Feature(feature.CurrentTemperature.String()).Exists() {
-			v := s.Feature(feature.CurrentTemperature.String()).Value()
+		if ft := s.Feature(feature.CurrentTemperature.String()); ft.Exists() {
+			v := ft.Value()
 			if v == "" {
 				continue
 			}
