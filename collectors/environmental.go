@@ -141,96 +141,136 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, s := range devices {
 		if s.Feature(feature.CurrentRelativeHumidity.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.CurrentRelativeHumidity.String()).Value())
+			v := s.Feature(feature.CurrentRelativeHumidity.String()).Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
-			humidity[s.Info().Topic] = v
+			humidity[s.Info().Topic] = vf
 			ch <- prometheus.MustNewConstMetric(c.relativeHumidity,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if s.Feature(feature.CurrentTemperature.String()).Exists() {
-			v, err := toFloat(s.Feature(feature.CurrentTemperature.String()).Value())
+			v := s.Feature(feature.CurrentTemperature.String()).Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
-			temperature[s.Info().Topic] = v
+			temperature[s.Info().Topic] = vf
 			ch <- prometheus.MustNewConstMetric(c.temperature,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("precipitation"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.precipitation,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("airPressure"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.airPressure,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("windSpeed"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.windSpeed,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("windDirection"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.windDirection,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("globalRadiation"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.globalRadiation,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("pm2_5Density"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.pm25,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("airQuality"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.airQuality,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 		if ft := s.Feature("waterLevel"); ft.Exists() {
-			v, err := toFloat(ft.Value())
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
 			if err != nil {
 				log.Print(err.Error())
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.waterLevel,
-				prometheus.GaugeValue, v, s.Info().Topic)
+				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 	}
 
