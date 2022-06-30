@@ -2,7 +2,6 @@ package collectors // import "hemtjan.st/sensorer/collectors"
 
 import (
 	"strconv"
-	"strings"
 )
 
 // namespace is the Prometheus namespaces for all collectors in this package
@@ -15,10 +14,4 @@ func toFloat(s string) (float64, error) {
 		return 0.0, err
 	}
 	return f, nil
-}
-
-// last returns the last element of s split on sep
-func last(s, sep string) string {
-	sp := strings.Split(s, sep)
-	return sp[len(sp)-1]
 }

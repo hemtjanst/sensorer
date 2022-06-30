@@ -146,7 +146,7 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 				log.Print(err.Error())
 				continue
 			}
-			humidity[last(s.Info().Topic, "/")] = v
+			humidity[s.Info().Topic] = v
 			ch <- prometheus.MustNewConstMetric(c.relativeHumidity,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
@@ -156,7 +156,7 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 				log.Print(err.Error())
 				continue
 			}
-			temperature[last(s.Info().Topic, "/")] = v
+			temperature[s.Info().Topic] = v
 			ch <- prometheus.MustNewConstMetric(c.temperature,
 				prometheus.GaugeValue, v, s.Info().Topic)
 		}
