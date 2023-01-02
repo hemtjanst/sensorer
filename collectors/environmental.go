@@ -30,6 +30,7 @@ type EnvironmentalCollector struct {
 	pm25             *prometheus.Desc
 	airQuality       *prometheus.Desc
 	waterLevel       *prometheus.Desc
+	lightLevel       *prometheus.Desc
 
 	m    *server.Manager
 	lat  float64
@@ -113,6 +114,11 @@ func NewEnvironmentalCollector(m *server.Manager, lat, long float64) (prometheus
 			"Water Level",
 			[]string{"source"}, nil,
 		),
+		lightLevel: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "lumen_per_square_meter"),
+			"Light Level (Lux)",
+			[]string{"source"}, nil,
+		),
 	}, nil
 }
 
@@ -132,6 +138,7 @@ func (c *EnvironmentalCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.pm25
 	ch <- c.airQuality
 	ch <- c.waterLevel
+	ch <- c.lightLevel
 }
 
 // Collect sends metric updates into the channel
@@ -271,6 +278,19 @@ func (c *EnvironmentalCollector) Collect(ch chan<- prometheus.Metric) {
 				continue
 			}
 			ch <- prometheus.MustNewConstMetric(c.waterLevel,
+				prometheus.GaugeValue, vf, s.Info().Topic)
+		}
+		if ft := s.Feature("currentAmbientLightLevel"); ft.Exists() {
+			v := ft.Value()
+			if v == "" {
+				continue
+			}
+			vf, err := toFloat(v)
+			if err != nil {
+				log.Print(err.Error())
+				continue
+			}
+			ch <- prometheus.MustNewConstMetric(c.lightLevel,
 				prometheus.GaugeValue, vf, s.Info().Topic)
 		}
 	}
