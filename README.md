@@ -30,7 +30,9 @@ MQTT topic.
 * `currentRelativeHumidity`: gauge `sensors_humidity_relative_percent`
 * `contactSensorState`: gauge `sensors_contact_state`
 * `currentPower`: gauge `sensors_power_current_watts`
+* `currentPowerProduced`: gauge `sensors_power_produced_current_watts`
 * `energyUsed`: counter `sensors_power_total_kwh`
+* `energyProduced`: counter `sensors_power_produced_total_kwh`
 * `currentVoltage`: gauge `sensors_power_current_voltage`
 * `currentAmpere`: gauge `sensors_power_current_ampere`
 * `batteryLevel`: gauge `sensors_battery_level_percent`
